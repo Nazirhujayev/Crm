@@ -1,0 +1,49 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ro'yxatga olish shakli</title>
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+
+</head>
+<body>
+
+    <div class="form-container">
+        <h1 class="button-green">Ro'yxatdan o'tish shakli:</h1>
+        <form action="" method="POST">
+            {% csrf_token %}
+            <div class="card-body">
+                <div class="row">
+                    {% for field in form %}
+                    <div class="col-sm-6 m-b30">
+
+                        <label class="form-label" for="{{field.auto_id}}">
+                            {% if field.field.required %}
+                            <b>{{field.label}}</b>
+                            {% else %}
+                            {{field.label}}
+                            {% endif %}
+                        </label>
+                        <div class="col-lg-12 col-md-12 col-sm-12">
+                            
+                            <span style="color:red;">{{field.errors}}</span>
+                            
+                            {{field}}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="form-button">
+                <button class="btn" type="submit">Yuborish</button>
+                <a href="{% url "main:user-list" %}" class="btn">ortga qaytish</a>
+            </div>
+        </form>
+    </div>
+    
+
+</body>
+</html>

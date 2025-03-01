@@ -1,0 +1,140 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM Card</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+</head>
+<body >
+    
+    <div class="header">
+        <h1 class="title">Userlar Haqida</h1>
+        <form method="GET" action="" class="search-form">
+            <input type="text" name="search" class="search-input" placeholder="Qidiruv..." value="{{ request.GET.search }}">
+            <button type="submit" class="search-button">Qidirish</button>
+        </form>
+        <a href="{% url 'main:user-create' %}" class="btn">Add User</a>
+    </div>
+    <div class="card-container">
+        {% for user in users %}
+        <div class="card">
+            <div class="card-inner">
+                <div class="card-front">
+                    <h2><strong>Ismi:</strong> {{ user.first_name }}</h2>
+                    <p><strong>Familiyasi:</strong> {{ user.last_name }}</p>
+                    <p><strong>Otasini ismi:</strong> {{ user.father_name }}</p>
+                    <p><strong>Telefon raqami:</strong> {{ user.phone_number }}</p>
+                    <p><strong>Oilasi telefon raqami:</strong> {{ user.family_phone_number }}</p>
+                    <p><strong>Ro'yxatga olingan kuni:</strong> {{ user.date_joined }}</p>
+                    <p><strong>Tug'ilgan sanasi:</strong> {{ user.brith }}</p>
+                    <p><strong>Kurs turi:</strong> {{ user.course }}</p>
+                </div>
+                <div class="card-back">
+                    <h2>To'lov Ma'lumotlari</h2>
+                    <p><strong>To'lov sanasi:</strong> {{ user.payment_date }}</p>
+                    <p><strong>To'lash summasi:</strong> {{ user.payment_amount }} so'm</p>
+                    <div class="card-buttons">
+                        <div class="button-group">
+                            <button id="payment-button-{{ user.id }}" 
+                                class="{% if user.paid %}btn btn-success{% else %}btn btn-warning{% endif %}" 
+                                onclick="togglePaymentStatus({{ user.id }})">
+                                {% if user.paid %}
+                                To'landi
+                                {% else %}
+                                Kutilmoqda
+                                {% endif %}
+                            </button>
+                            <a href="{% url 'main:user-update' user.pk %}" class="btn">Tahrirlash</a>
+                        </div>
+                        <a href="{% url 'main:user-orders' user.id %}" class="btn-custom">To'lovni Ko'rish</a>
+                        <a href="{% url 'main:user-delete' user.pk %}" class="btn-custom">O'chirish</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>    
+
+    {% if is_paginated %}
+    <nav aria-label="Page navigation">
+        <ul class="pagination">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1" aria-label="First">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Last">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+{% endif %}
+    
+    <script>
+        function togglePaymentStatus(userId) {
+            fetch(`/update-payment/${userId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    let button = document.getElementById(`payment-button-${userId}`);
+                    if (data.new_status) {
+                        button.className = "btn btn-success";
+                        button.textContent = "To'landi";
+                    } else {
+                        button.className = "btn btn-warning";
+                        button.textContent = "Kutilmoqda";
+                    }
+                    
+                    if (data.order_id) {
+                        alert(`Buyurtma yaratildi: ${data.order_id}`);
+                    }
+                } else {
+                    alert("Holatni o'zgartirishda xatolik yuz berdi.");
+                }
+            })
+            .catch(error => console.log("Xato: ", error));
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+</body>
+</html>
